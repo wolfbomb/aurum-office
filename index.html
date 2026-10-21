@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>AURUM Team Office</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="dashboard-team.css">
+<style>
+  :root { --bg:#0d1117; --panel:#161b22; --panel2:#1c2330; --border:#30363d; --fg:#e6edf3; --muted:#8b949e;
+          --accent:#2f81f7; --green:#3fb950; --amber:#d29922; --cyan:#39c5cf; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--fg); font:14px/1.5 -apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif; }
+  header { display:flex; align-items:baseline; gap:16px; padding:16px 24px; border-bottom:1px solid var(--border); background:var(--panel); position:sticky; top:0; z-index:5; flex-wrap:wrap; }
+  header h1 { font-size:18px; margin:0; font-weight:600; }
+  header .meta { color:var(--muted); font-size:12px; }
+  header .phase { color:var(--amber); font-size:12px; }
+  .badge-wait { display:inline-block; min-width:18px; padding:0 6px; border-radius:9px; background:#d29922; color:#0d1117; font-size:11px; font-weight:700; line-height:18px; text-align:center; }
+  #dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:var(--muted); margin-right:6px; }
+  #dot.live { background:var(--green); box-shadow:0 0 6px var(--green); }
+  .wrap { padding:20px 24px; max-width:1500px; margin:0 auto; }
+  .dim { color:var(--muted); } .err { color:#f85149; }
+  .board { display:grid; grid-template-columns:repeat(5,1fr); gap:14px; align-items:start; }
+  .col { background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:12px; min-width:0; }
+  .col h3 { margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.05em; color:var(--muted); display:flex; justify-content:space-between; }
+  .col h3 .cnt { background:var(--panel2); border-radius:10px; padding:0 8px; color:var(--fg); }
+  .card { background:var(--panel2); border:1px solid var(--border); border-left:3px solid var(--accent); border-radius:7px; padding:9px 11px; margin-bottom:9px; }
+  .col[data-k=done] .card { border-left-color:var(--green); }
+  .col[data-k=in_progress] .card { border-left-color:var(--amber); }
+  .col[data-k=queue] .card { border-left-color:var(--cyan); }
+  .col[data-k=backlog] .card { border-left-color:var(--muted); }
+  .col[data-k=waiting_human] .card { border-left-color:#d29922; }
+  .card .who { display:inline-block; margin-top:5px; font-size:11px; background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:0 8px; }
+  .card .who.busy { border-color:var(--amber); }
+  .card .t { font-weight:600; font-size:13px; overflow-wrap:anywhere; }
+  .tid { color:var(--muted); font-weight:600; margin-right:6px; }
+  .card .n { color:var(--muted); font-size:11.5px; margin-top:3px; overflow-wrap:anywhere; }
+  .card .n.clamp { display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+  .kind { font-size:10px; padding:0 6px; border-radius:4px; background:var(--panel); border:1px solid var(--border); color:var(--muted); margin-left:4px; }
+  @media(max-width:1100px){ .board{ grid-template-columns:1fr 1fr; } }
+  @media(max-width:640px){ .board{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>AURUM · Team Office</h1>
+  <span class="meta"><span id="dot"></span><span id="clock">—</span></span>
+  <span class="phase" id="phase"></span>
+  <span class="meta" id="runner"></span>
+  <span style="margin-left:auto" class="meta">Waiting on you <span class="badge-wait" id="waitBadge">0</span></span>
+  <button id="signout" class="mdl-preset" type="button" hidden>Sign out</button>
+</header>
+<div class="wrap" id="gate" hidden>
+  <div class="team-wrap" style="max-width:520px;margin:60px auto">
+    <h2>Staff only</h2>
+    <p>Sign in with the owner email to see the team at work.</p>
+    <p><b>nimrod.resulta@gmail.com</b></p>
+    <button id="login" class="mdl-preset" type="button">Email me a sign-in link</button>
+    <p id="loginMsg" class="dim"></p>
+  </div>
+</div>
+<div class="wrap" id="app" hidden>
+  <div id="status"></div>
+  <div class="team-wrap"><h2 class="h2-row">Who's Doing What <button id="modelsBtn" class="mdl-preset" type="button">Agent Models</button></h2><div id="team"></div><div id="teamPop" class="pop" role="tooltip"></div></div>
+  <div class="team-wrap"><h2>Task Board</h2>
+    <div class="dim" style="margin-bottom:8px">Tickets from board/, pending decisions from DECISIONS.md, and anything blocked on you. Refreshes every 10 s.</div>
+    <div class="board" id="board"></div>
+  </div>
+</div>
+<div id="modelsModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="mdlTitle" hidden>
+  <div class="modal-box team-wrap">
+    <button class="modal-x" id="modelsClose" type="button" aria-label="Close">×</button>
+    <h2 id="mdlTitle">Agent Models</h2>
+    <div class="dim" style="margin-bottom:10px">Which Claude model each agent runs on. Lower tiers use less of your subscription. Changes are sent to your PC, which applies them within a minute; they take effect from the next sprint.</div>
+    <div class="mdl-bar"><span class="dim">Presets:</span>
+      <button class="mdl-preset" data-preset="economy" type="button">Economy</button>
+      <button class="mdl-preset" data-preset="balanced" type="button">Balanced</button>
+      <button class="mdl-preset" data-preset="max" type="button">Max quality</button>
+      <span id="modelsStatus" class="dim"></span></div>
+    <div id="models"></div>
+  </div>
+</div>
+<script src="dashboard-sprites.js"></script>
+<script src="dashboard-team.js"></script>
+<script type="module">
+import { createClient } from "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/+esm";
+const sb = createClient("https://gjrhupcftjmlzeeuhcil.supabase.co", "sb_publishable_DUrLKTA4Xhwdf8bhyGAbqg_VqusCPyd");
+const OWNER = "nimrod.resulta@gmail.com";
+let lastSync = null;
+const ROSTER_FALLBACK = [];
+let ROSTER = ROSTER_FALLBACK, S = { tasks: [], activity: [], runner: {} }, hoverRole = null;
+const esc = teamEsc;
+const agentName = r => r === 'you' ? 'You (Nimrod)' : ((ROSTER.find(a => a.role === r) || {}).name || r || '');
+const COLS = [
+  { key:'in_progress', title:'In Progress' }, { key:'queue', title:'On Queue' },
+  { key:'waiting_human', title:'Waiting on You' }, { key:'backlog', title:'Backlog' },
+  { key:'done', title:'Completed (latest 12)', limit:12 },
+];
+function card(t) {
+  const rev = t.folder === 'review', next = { submit: 'waiting for review', pass: 'next reviewer', approved: 'next reviewer', changes: 'back to ' + agentName(t.assignee), fail: 'back to ' + agentName(t.assignee) };
+  const nextRv = (t.reviewState || []).find(r => r.mark === 'todo');
+  const who = t.folder === 'review' && t.status === 'queue'
+    ? '<div><span class="who">awaiting review' + (nextRv ? ' · next: ' + esc(agentName(nextRv.role)) : '') + '</span> <span class="dim" style="font-size:11px">dev: ' + esc(agentName(t.assignee)) + '</span></div>'
+      + '<div class="n">Stage: <b>' + esc(t.stage || 'waiting for the next reviewer') + '</b></div><div>' + (t.reviewState || []).map(r =>
+          '<span class="rv ' + r.mark + '" title="' + esc({ ok: 'passed', changes: 'asked for changes', doing: 'reviewing now', todo: 'not yet' }[r.mark]) + '">'
+          + ({ ok: '✓', changes: '✗', doing: '▶', todo: '·' }[r.mark]) + ' ' + esc(agentName(r.role)) + '</span>').join('') + '</div>'
+    : t.status !== 'in_progress' ? (t.assignee ? '<div><span class="who">' + esc(agentName(t.assignee)) + (t.status === 'queue' ? ' · to start' : '') + '</span></div>' : '')
+    : '<div>' + (t.active ? '<span class="who busy">▶ ' + esc(agentName(t.active)) + '</span> ' : '<span class="who">' + esc(next[t.lastEvent] || 'waiting') + '</span> ')
+      + (t.assignee && t.active !== t.assignee ? ' <span class="dim" style="font-size:11px">dev: ' + esc(agentName(t.assignee)) + '</span>' : '') + '</div>'
+      + (rev ? '<div class="n">Stage: <b>' + esc(t.stage || 'review') + '</b></div><div>' + (t.reviewState || []).map(r =>
+          '<span class="rv ' + r.mark + '" title="' + esc({ ok: 'passed', changes: 'asked for changes', doing: 'reviewing now', todo: 'not yet' }[r.mark]) + '">'
+          + ({ ok: '✓', changes: '✗', doing: '▶', todo: '·' }[r.mark]) + ' ' + esc(agentName(r.role)) + '</span>').join('') + '</div>' : '');
+  return '<div class="card"><div class="t"><span class="tid">' + esc(t.taskId) + '</span>' + esc(t.title)
+    + (t.kind === 'decision' ? '<span class="kind">decision</span>' : '') + '</div>' + who
+    + (t.blockedReason ? '<div class="n">blocked: ' + esc(t.blockedReason) + '</div>' : (t.notes ? '<div class="n clamp" title="' + esc(t.notes) + '">' + esc(t.notes) + '</div>' : ''))
+    + (t.status === 'waiting_human' && t.humanCommand ? '<pre class="guide">' + esc(t.humanCommand) + '</pre>' : '') + '</div>';
+}
+function renderBoard() {
+  const when = t => Date.parse(t.updatedAt) || 0;
+  document.getElementById('board').innerHTML = COLS.map(c => {
+    let rows = S.tasks.filter(t => t.status === c.key);
+    rows = c.key === 'done' ? rows.sort((a, b) => when(b) - when(a)) : rows.sort((a, b) => (a.priority - b.priority) || String(a.taskId).localeCompare(String(b.taskId)));
+    const total = rows.length; if (c.limit) rows = rows.slice(0, c.limit);
+    return '<div class="col" data-k="' + c.key + '"><h3>' + esc(c.title) + '<span class="cnt">' + total + '</span></h3>'
+      + (rows.map(card).join('') || '<div class="dim">none</div>') + '</div>';
+  }).join('');
+  const n = S.tasks.filter(t => t.status === 'waiting_human').length;
+  document.getElementById('waitBadge').textContent = n;
+}
+function renderTeam() {
+  document.getElementById('team').innerHTML = renderTeamSection(ROSTER, S.tasks, S.activity, { sprint: !!(S.runner && S.runner.sprintRunning) });
+  if (hoverRole) showPop(hoverRole);
+}
+function showPop(role) {
+  const tile = document.querySelector('#team [data-role="' + role + '"]'), a = ROSTER.find(r => r.role === role), pop = document.getElementById('teamPop');
+  if (!tile || !a) { pop.classList.remove('show'); return; }
+  hoverRole = role;
+  const st = teamStatus(ROSTER, S.tasks, S.activity, { sprint: !!(S.runner && S.runner.sprintRunning) })[role];
+  pop.innerHTML = renderAgentCard(a, st, S.activity, ROSTER, Date.now());
+  const wrap = pop.parentElement.getBoundingClientRect(), r = tile.getBoundingClientRect();
+  let left = r.right - wrap.left + 8; if (left + 300 > wrap.width) left = r.left - wrap.left - 298;
+  pop.style.left = Math.max(4, left) + 'px'; pop.style.top = Math.max(4, r.top - wrap.top - 6) + 'px'; pop.classList.add('show');
+}
+function hidePop() { hoverRole = null; document.getElementById('teamPop').classList.remove('show'); }
+{ const el = document.getElementById('team');
+  el.addEventListener('mouseover', e => { const t = e.target.closest('[data-role]'); if (t) showPop(t.dataset.role); });
+  el.addEventListener('mouseout', e => { const t = e.target.closest('[data-role]'); if (t && !t.contains(e.relatedTarget)) hidePop(); });
+  el.addEventListener('focusin', e => { const t = e.target.closest('[data-role]'); if (t) showPop(t.dataset.role); });
+  el.addEventListener('focusout', hidePop); }
+async function load() {
+  const st = document.getElementById('status'), dot = document.getElementById('dot');
+  try {
+    const { data, error } = await sb.from('snapshot').select('data, updated_at').eq('id', 1).maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!data) throw new Error('no data yet - is the PC sync running?');
+    S = data.data; ROSTER = S.roster; lastSync = new Date(data.updated_at);
+    const age = (Date.now() - lastSync.getTime()) / 60000;
+    st.innerHTML = age > 6 ? '<div class="err">PC has not synced since ' + lastSync.toLocaleString() + ' (PC off, asleep or sync stopped). Showing that state.</div>' : '';
+    dot.className = age > 6 ? '' : 'live';
+    document.getElementById('phase').textContent = S.phase ? 'Phase: ' + S.phase : '';
+    const run = (S.runner && S.runner.running) || [];
+    document.getElementById('runner').textContent = run.length ? 'running: ' + run.join(', ') : 'runner idle';
+    document.getElementById('clock').textContent = 'PC sync ' + lastSync.toLocaleTimeString();
+    renderTeam(); renderBoard();
+  } catch (e) { dot.className = ''; st.innerHTML = '<div class="err">dashboard load failed: ' + esc(e.message) + ' (showing last good state)</div>'; }
+}
+let timer = null;
+function start(session) {
+  const ok = !!session;
+  document.getElementById('gate').hidden = ok; document.getElementById('app').hidden = !ok; document.getElementById('signout').hidden = !ok;
+  clearInterval(timer);
+  if (ok) { load(); timer = setInterval(load, 15000); }
+}
+document.getElementById('login').onclick = async () => {
+  const msg = document.getElementById('loginMsg'); msg.textContent = 'Sending...';
+  const { error } = await sb.auth.signInWithOtp({ email: OWNER, options: { emailRedirectTo: location.origin + location.pathname, shouldCreateUser: true } });
+  msg.textContent = error ? 'Could not send: ' + error.message : 'Check ' + OWNER + ' and open the link on this device.';
+};
+document.getElementById('signout').onclick = async () => { await sb.auth.signOut(); location.reload(); };
+sb.auth.onAuthStateChange((evt, session) => { if (evt === 'SIGNED_IN' || evt === 'SIGNED_OUT') start(session); });
+start((await sb.auth.getSession()).data.session);
+
+// Agent Models pop-up (edits model: in .claude/agents/<role>.md via /api/models).
+const MODEL_LABEL = { opus: 'Opus - highest quality', sonnet: 'Sonnet - balanced', haiku: 'Haiku - lowest cost' };
+const PRESETS = {
+  max:      () => 'opus',
+  balanced: r => ['lead', 'quant', 'dev-python', 'dev-mql5', 'safety'].includes(r) ? 'opus' : 'sonnet',
+  economy:  r => ['quant', 'safety'].includes(r) ? 'opus' : r === 'ops' ? 'haiku' : 'sonnet',
+};
+let MDL = null;
+function mdlStatus(msg, bad) { const el = document.getElementById('modelsStatus'); el.textContent = ' ' + msg; el.style.color = bad ? '#ff7b72' : ''; }
+function renderModels() {
+  document.getElementById('models').innerHTML = MDL.agents.map(a =>
+    '<div class="mdl-row"><span><b class="who-name">' + esc(a.name) + '</b> <span class="dim">' + esc(a.title.split(' · ')[0]) + '</span></span>'
+    + '<select data-role="' + esc(a.role) + '">' + MDL.models.concat(MDL.models.includes(a.model) ? [] : [a.model]).map(m =>
+      '<option value="' + esc(m) + '"' + (m === a.model ? ' selected' : '') + '>' + esc(MODEL_LABEL[m] || m) + '</option>').join('') + '</select></div>').join('');
+}
+async function loadModels() {
+  try { if (!S.models) throw new Error('no model data from the PC yet'); MDL = JSON.parse(JSON.stringify(S.models)); renderModels(); }
+  catch (e) { document.getElementById('models').innerHTML = '<div class="err">models unavailable: ' + esc(e.message) + '</div>'; }
+}
+async function saveModel(role, model) {
+  const { error } = await sb.from('model_requests').insert({ role, model });
+  if (error) throw new Error(error.message);
+  const a = MDL.agents.find(x => x.role === role); if (a) a.model = model;
+}
+const modal = document.getElementById('modelsModal');
+function openModels() { modal.hidden = false; mdlStatus(''); loadModels(); document.getElementById('modelsClose').focus(); }
+function closeModels() { modal.hidden = true; document.getElementById('modelsBtn').focus(); }
+document.getElementById('modelsBtn').addEventListener('click', openModels);
+document.getElementById('modelsClose').addEventListener('click', closeModels);
+modal.addEventListener('click', e => { if (e.target === modal) closeModels(); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && !modal.hidden) closeModels(); });
+document.getElementById('models').addEventListener('change', async e => {
+  const sel = e.target.closest('select[data-role]'); if (!sel) return;
+  mdlStatus('saving...');
+  try { await saveModel(sel.dataset.role, sel.value); renderModels(); mdlStatus('requested - your PC applies it within a minute, from the next sprint'); }
+  catch (err) { mdlStatus('not saved: ' + err.message, true); await loadModels(); }
+});
+document.querySelector('.mdl-bar').addEventListener('click', async e => {
+  const b = e.target.closest('[data-preset]'); if (!b || !MDL) return;
+  const want = PRESETS[b.dataset.preset], changes = MDL.agents.filter(a => a.model !== want(a.role));
+  if (!changes.length) { mdlStatus('already on this preset'); return; }
+  mdlStatus('applying ' + changes.length + ' change(s)...');
+  try { for (const a of changes) await saveModel(a.role, want(a.role)); renderModels(); mdlStatus(b.textContent + ' applied - from the next sprint'); }
+  catch (err) { mdlStatus('not applied: ' + err.message, true); await loadModels(); }
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,96 @@
+/* AURUM team page: "Who's Doing What" retro team section (dashboard-team.js renders the markup). */
+.team-wrap { position:relative; background:#14172b; border:2px solid #2b3160; border-radius:10px; padding:16px 18px; margin-bottom:16px; }
+.team-wrap > h2 { font-family:'Press Start 2P', ui-monospace, Consolas, monospace; font-size:13px; letter-spacing:.04em;
+  color:#f0b429; text-transform:uppercase; margin:0 0 12px; text-shadow:2px 2px 0 #0a0c1a; }
+.team { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(340px,1fr); gap:20px; align-items:start; }
+@media (max-width:980px) { .team { grid-template-columns:1fr; } }
+
+.team-groups { display:flex; flex-wrap:wrap; gap:4px 26px; align-content:flex-start; }
+.team-groups .grp { margin-bottom:10px; }
+.team-groups h4, .pn-t, .feed-h { font-family:'Press Start 2P', ui-monospace, Consolas, monospace; font-size:9px; color:#8e9ad6;
+  text-transform:uppercase; letter-spacing:.05em; margin:6px 0 8px; }
+.tiles { display:flex; flex-wrap:wrap; gap:8px; }
+
+.tile { box-sizing:border-box; width:112px; padding:8px 4px 6px; text-align:center; cursor:default;
+  border:2px solid transparent; border-radius:8px; display:flex; flex-direction:column; align-items:center; gap:4px;
+  font-family:'Press Start 2P', ui-monospace, Consolas, monospace; color:#e6e9ff; outline:none; }
+.tile:hover, .tile:focus-visible { background:#1b2040; border-color:#3b4488; }
+.pf { display:block; width:56px; height:56px; border-radius:50%; background:#1d2340; border:3px solid #4a5590; overflow:hidden; }
+.pf svg { display:block; width:100%; height:100%; image-rendering:pixelated; }
+.pf.sm { width:44px; height:44px; flex:0 0 auto; }
+.pf.xs { width:26px; height:26px; border-width:2px; flex:0 0 auto; }
+.pf.gear { display:flex; align-items:center; justify-content:center; font-size:15px; color:#8e9ad6; background:#222850; font-family:system-ui, sans-serif; }
+.tile.busy .pf { border-color:#f0b429; box-shadow:0 0 0 2px #f0b42944, 0 0 14px #f0b42988; animation:team-bob .9s steps(2) infinite; }
+@keyframes team-bob { 0% { transform:translateY(0); } 100% { transform:translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .tile.busy .pf { animation:none; } }
+.tn { font-size:9px; line-height:1.3; display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
+.tr { font-size:7px; color:#8e9ad6; line-height:1.5; display:block; min-height:21px; white-space:normal; }
+.ti { font-size:8px; color:#f0b429; min-height:10px; display:block; }
+
+/* status badge beside/under the name */
+.bdg { display:inline-block; font-family:'Press Start 2P', ui-monospace, Consolas, monospace; font-size:7px; line-height:1;
+  padding:3px 5px; border-radius:6px; text-transform:uppercase; letter-spacing:.03em; color:#10131f; background:#6b78b3; white-space:nowrap; }
+.bdg-idle { background:#5a6699; color:#e6e9ff; }
+.bdg-building, .bdg-coordinating { background:#f0b429; }
+.bdg-verifying { background:#36c5d6; }
+.bdg-reviewing { background:#b48cff; }
+.bdg-merging { background:#4cd964; }
+.bdg-deploying { background:#ff7a59; }
+.bdg-sweeping { background:#4da3ff; }
+.bdg-researching { background:#e879f9; }
+.bdg-blocked { background:#ff5c5c; color:#fff; }
+.bdg-offline { background:#3a4054; color:#c8cde0; }
+
+/* hover popover (single element positioned by index.html) */
+.pop { position:absolute; z-index:20; width:290px; background:#1a1f3a; border:2px solid #5865b7; border-radius:8px; padding:10px 12px;
+  box-shadow:0 8px 24px rgba(0,0,0,.55); pointer-events:none; display:none; }
+.pop.show { display:block; }
+.pop-h { display:flex; gap:10px; align-items:center; margin-bottom:8px; }
+.pn-n { font-family:'Press Start 2P', ui-monospace, Consolas, monospace; font-size:10px; color:#e6e9ff; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.pn-s { font-size:12px; color:#8e9ad6; margin-top:4px; }
+.pn-now { font-size:13px; margin-bottom:8px; }
+.ev { font-size:12px; line-height:1.45; padding:4px 0; border-top:1px dashed #2b3160; color:#cfd4f5; }
+.who-name { color:#ffd166; font-weight:600; }
+.team .dim { color:#8e9ad6; }
+.team .tid { color:#8e9ad6; font-weight:600; margin-right:2px; }
+
+/* live activity feed */
+.team-panel { background:#10142a; border:2px solid #2b3160; border-radius:8px; padding:10px 12px; }
+.feed { max-height:600px; overflow-y:auto; scrollbar-width:thin; scrollbar-color:#3b4488 #10142a; }
+.fr { display:flex; gap:8px; align-items:flex-start; padding:6px 0; border-bottom:1px solid #1f2547; font-size:13px; line-height:1.4; color:#e6e9ff; }
+.fr .ft { flex:0 0 112px; font-size:11px; color:#8e9ad6; padding-top:2px; font-variant-numeric:tabular-nums; }
+.fr .fx { flex:1 1 auto; min-width:0; overflow-wrap:anywhere; }
+.fr-empty { padding:12px 0; }
+
+/* agent model assignments */
+.mdl-bar { display:flex; flex-wrap:wrap; gap:8px; align-items:center; margin-bottom:10px; }
+.mdl-preset { background:#222850; color:#e6e9ff; border:2px solid #3b4488; border-radius:6px; padding:4px 10px; cursor:pointer;
+  font-family:'Press Start 2P', ui-monospace, Consolas, monospace; font-size:8px; }
+.mdl-preset:hover { border-color:#8e9ad6; }
+.mdl-row { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:6px 0; border-top:1px dashed #2b3160; font-size:13px; }
+.mdl-row select { background:#10142a; color:#e6e9ff; border:2px solid #3b4488; border-radius:6px; padding:4px 8px; font:inherit; min-width:210px; }
+#models { max-width:640px; }
+
+/* step-by-step guide for tasks waiting on the human */
+.guide { white-space:pre-wrap; margin:8px 0 0; padding:8px 10px; background:var(--panel2, #1c2330); border-left:3px solid #f0b429;
+  border-radius:4px; font:12px/1.5 ui-monospace, Consolas, monospace; color:#e6e9ff; overflow-wrap:anywhere; }
+
+
+/* AURUM: feed height follows the agent grid (the feed scrolls inside), so the task board sits right below */
+.team { align-items:stretch; }
+.team-panel { position:relative; min-height:320px; }
+.team-panel .feed { position:absolute; top:40px; left:12px; right:12px; bottom:10px; max-height:none; }
+@media (max-width:980px) { .team-panel .feed { position:static; max-height:360px; } }
+.team-groups .tiles { gap:4px; }
+.h2-row { display:flex; align-items:center; gap:14px; }
+/* Agent Models pop-up */
+.modal { position:fixed; inset:0; z-index:50; background:rgba(5,7,15,.72); display:flex; align-items:flex-start; justify-content:center; padding:60px 16px; overflow:auto; }
+.modal[hidden] { display:none; }
+.modal-box { width:min(760px,100%); margin:0; }
+.modal-x { position:absolute; top:10px; right:12px; background:none; border:0; color:#8e9ad6; font-size:22px; cursor:pointer; line-height:1; }
+.modal-x:hover { color:#e6e9ff; }
+
+.bdg-paused { background:#8b949e; color:#10131f; }
+.bdg-fixing { background:#ffa94d; }
+.rv { display:inline-block; font-size:11px; margin:4px 6px 0 0; color:var(--muted, #8b949e); }
+.rv.ok { color:#3fb950; } .rv.changes { color:#ff7b72; } .rv.doing { color:#f0b429; font-weight:600; }
