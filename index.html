@@ -99,6 +99,13 @@ const COLS = [
   { key:'waiting_human', title:'Waiting on You' }, { key:'backlog', title:'Backlog' },
   { key:'done', title:'Completed (latest 12)', limit:12 },
 ];
+// The team runs the lead + 2 workers at once (Max plan); reviewers count as workers.
+const WORKER_SLOTS = 2;
+function slotNote() {
+  const busy = [...new Set(S.tasks.filter(t => t.active && t.active !== 'lead').map(t => t.active))];
+  if (!(S.runner && S.runner.sprintRunning)) return 'starts when the next sprint runs';
+  return busy.length >= WORKER_SLOTS ? 'waiting for a free slot: ' + busy.length + ' of ' + WORKER_SLOTS + ' busy (' + busy.map(agentName).join(', ') + ')' : 'next up when the lead dispatches it';
+}
 function card(t) {
   const rev = t.folder === 'review', next = { submit: 'waiting for review', pass: 'next reviewer', approved: 'next reviewer', changes: 'back to ' + agentName(t.assignee), fail: 'back to ' + agentName(t.assignee) };
   const nextRv = (t.reviewState || []).find(r => r.mark === 'todo');
@@ -107,7 +114,8 @@ function card(t) {
       + '<div class="n">Stage: <b>' + esc(t.stage || 'waiting for the next reviewer') + '</b></div><div>' + (t.reviewState || []).map(r =>
           '<span class="rv ' + r.mark + '" title="' + esc({ ok: 'passed', changes: 'asked for changes', doing: 'reviewing now', todo: 'not yet' }[r.mark]) + '">'
           + ({ ok: '✓', changes: '✗', doing: '▶', todo: '·' }[r.mark]) + ' ' + esc(agentName(r.role)) + '</span>').join('') + '</div>'
-    : t.status !== 'in_progress' ? (t.assignee ? '<div><span class="who">' + esc(agentName(t.assignee)) + (t.status === 'queue' ? ' · to start' : '') + '</span></div>' : '')
+    : t.status !== 'in_progress' ? (t.assignee ? '<div><span class="who">' + esc(agentName(t.assignee)) + (t.status === 'queue' ? ' · to start' : '') + '</span></div>'
+        + (t.status === 'queue' && slotNote() ? '<div class="n">' + esc(slotNote()) + '</div>' : '') : '')
     : '<div>' + (t.active ? '<span class="who busy">▶ ' + esc(agentName(t.active)) + '</span> ' : '<span class="who">' + esc(next[t.lastEvent] || 'waiting') + '</span> ')
       + (t.assignee && t.active !== t.assignee ? ' <span class="dim" style="font-size:11px">dev: ' + esc(agentName(t.assignee)) + '</span>' : '') + '</div>'
       + (rev ? '<div class="n">Stage: <b>' + esc(t.stage || 'review') + '</b></div><div>' + (t.reviewState || []).map(r =>
