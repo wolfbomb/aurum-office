@@ -99,8 +99,8 @@ const COLS = [
   { key:'waiting_human', title:'Waiting on You' }, { key:'backlog', title:'Backlog' },
   { key:'done', title:'Completed (latest 12)', limit:12 },
 ];
-// The team runs the lead + 2 workers at once (Max plan); reviewers count as workers.
-const WORKER_SLOTS = 2;
+// The team runs the lead + 3 workers at once (Max plan); reviewers count as workers.
+const WORKER_SLOTS = 3;
 function slotNote() {
   const busy = [...new Set(S.tasks.filter(t => t.active && t.active !== 'lead').map(t => t.active))];
   if (!(S.runner && S.runner.sprintRunning)) return 'starts when the next sprint runs';
