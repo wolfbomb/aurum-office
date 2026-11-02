@@ -95,8 +95,8 @@ let ROSTER = ROSTER_FALLBACK, S = { tasks: [], activity: [], runner: {} }, hover
 const esc = teamEsc;
 const agentName = r => r === 'you' ? 'You (Nimrod)' : ((ROSTER.find(a => a.role === r) || {}).name || r || '');
 const COLS = [
-  { key:'in_progress', title:'In Progress' }, { key:'queue', title:'On Queue' },
-  { key:'waiting_human', title:'Waiting on You' }, { key:'backlog', title:'Backlog' },
+  { key:'backlog', title:'Backlog' }, { key:'in_progress', title:'In Progress' },
+  { key:'queue', title:'On Queue' }, { key:'waiting_human', title:'Waiting on You' },
   { key:'done', title:'Completed (latest 12)', limit:12 },
 ];
 // The team runs the lead + 3 workers at once (Max plan); reviewers count as workers.
